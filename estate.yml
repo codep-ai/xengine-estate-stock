@@ -1,0 +1,24 @@
+# Estate config for datapai-platform-be/scripts/xengine.py --estate. The ONE thing the teams share: which projects exist, which
+# engine builds each, and where the evidence goes. No model code lives here. Identity convention: glue:<db>.<table>,
+# snowflake:<db>.<schema>.<table> (declared in each consumer's _sources.yml as meta.physical_identity).
+pipeline_id: stock_xengine_mesh
+region: ap-southeast-2
+snowflake: {profile: datapai_snowflake_svc, target: prod}
+
+# Producer-owned Glue Iceberg -> read-only Glue-backed pointers in Snowflake, so the analytics team can read them. Run after producer builds.
+snowflake_sync:
+  - glue_database: stock_common_mesh
+    database: DATAPAI
+    schema: STOCK_COMMON_MESH
+    external_volume: DATAPAI_S3_VOL
+    catalog_integration: CFD_OBJ_CAT
+    volume_base_url: s3://codepais3/stock/bronze/
+    mode: glue
+    glue_catalog_integration: GLUE_STOCK_COMMON
+
+# Producer first, then consumers. Each entry = one repo's dbt artefacts (manifest.json + catalog.json from `dbt docs generate`).
+projects:
+  - {name: xengine-producer-stock,     project_dir: /home/ec2-user/git/xengine-producer-stock,     engine: athena,     dialect: athena,     target_dir: target}
+  - {name: xengine-consumer-analytics, project_dir: /home/ec2-user/git/xengine-consumer-analytics, engine: snowflake,  dialect: snowflake,  target_dir: target}
+  - {name: xengine-consumer-ml,        project_dir: /home/ec2-user/git/xengine-consumer-ml,        engine: databricks, dialect: databricks, target_dir: target}
+lineage_out: lineage_xengine.json
