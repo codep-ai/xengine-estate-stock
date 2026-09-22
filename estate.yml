@@ -16,6 +16,11 @@ snowflake_sync:
     mode: glue
     glue_catalog_integration: GLUE_STOCK_COMMON
 
+# Consumer engines that reach Snowflake through a reader role (Databricks catalog federation uses DATABRICKS_READER) see a schema
+# only once it is granted. Run after the first build of each schema; future grants cover new tables afterwards.
+reader_grants:
+  - {roles: [DATABRICKS_READER], schemas: [DATAPAI.STOCK_COMMON_MESH, DATAPAI.STOCK_CONSUMER_MESH]}
+
 # Producer first, then consumers. Each entry = one repo's dbt artefacts (manifest.json + catalog.json from `dbt docs generate`).
 projects:
   - {name: xengine-producer-stock,     project_dir: /home/ec2-user/git/xengine-producer-stock,     engine: athena,     dialect: athena,     target_dir: target}
